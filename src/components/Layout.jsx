@@ -14,8 +14,8 @@ const Layout = () => {
         { label: 'Projects', ariaLabel: 'Projects', link: '/learning' },
         { label: 'Library', ariaLabel: 'Electronics Library', link: '/electronics' },
         { label: 'Workshops', ariaLabel: 'Events', link: '/workshops' },
-        { label: 'Contact', ariaLabel: 'Contact', link: '/contact' },
-        { label: 'Login', ariaLabel: 'Login', link: '/auth' }
+        { label: 'Contact', ariaLabel: 'Contact', link: '/contact' }
+        // Login item removed - now shown as UserIcon component
     ];
 
     const socialItems = [

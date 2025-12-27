@@ -1,11 +1,40 @@
-import React, { useState } from 'react';
-import { workshopsData } from '../data/workshopsData';
+import React, { useState, useEffect } from 'react';
+import { getWorkshops } from '../lib/supabase';
 import { MapPin, Calendar, ArrowRight, X, Check } from 'lucide-react';
 import './Workshops.css';
 
 const Workshops = () => {
     const [selectedWorkshop, setSelectedWorkshop] = useState(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [workshops, setWorkshops] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchWorkshops();
+    }, []);
+
+    const fetchWorkshops = async () => {
+        try {
+            setLoading(true);
+            const data = await getWorkshops();
+            // Transform data to match component structure
+            const transformedWorkshops = data.map(workshop => ({
+                id: workshop.id,
+                title: workshop.title,
+                desc: workshop.description || '',
+                category: workshop.category || '',
+                date: workshop.date || '',
+                location: workshop.location || '',
+                image: workshop.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400',
+                highlights: workshop.highlights || []
+            }));
+            setWorkshops(transformedWorkshops);
+        } catch (error) {
+            console.error('Error fetching workshops:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // In a real app, you'd handle form state here
     const handleSubmit = (e) => {
@@ -32,7 +61,12 @@ const Workshops = () => {
                 </div>
 
                 <div className="workshop-grid">
-                    {workshopsData.map((workshop) => (
+                    {loading ? (
+                        <div className="text-white text-center py-12">Loading workshops...</div>
+                    ) : workshops.length === 0 ? (
+                        <div className="text-white text-center py-12">No workshops found.</div>
+                    ) : (
+                        workshops.map((workshop) => (
                         <div key={workshop.id} className="workshop-card">
                             <div className="workshop-img-wrapper">
                                 <img src={workshop.image} alt={workshop.title} className="workshop-img" />
@@ -65,7 +99,8 @@ const Workshops = () => {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
                 <div className="cta-box">

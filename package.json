@@ -13,6 +13,7 @@
     "@radix-ui/react-accordion": "^1.2.12",
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.12.28",
+    "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
     "gsap": "^3.14.2",

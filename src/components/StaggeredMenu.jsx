@@ -1,6 +1,7 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Link } from 'react-router-dom';
+import UserIcon from './UserIcon';
 
 const StaggeredMenu = ({
     position = 'right',
@@ -393,6 +394,8 @@ const StaggeredMenu = ({
                         />
                     </div>
 
+                    <div className="flex items-center gap-4">
+                        <UserIcon />
                     <button
                         ref={toggleBtnRef}
                         className="sm-toggle relative inline-flex items-center gap-[0.3rem] bg-transparent border-0 cursor-pointer text-[#e9e9ef] font-medium leading-none overflow-visible pointer-events-auto"
@@ -431,6 +434,7 @@ const StaggeredMenu = ({
                             />
                         </span>
                     </button>
+                    </div>
                 </header>
 
                 <aside

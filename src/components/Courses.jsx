@@ -1,17 +1,47 @@
-import React, { useState } from 'react';
-import { coursesData } from '../data/coursesData';
+import React, { useState, useEffect } from 'react';
+import { getCourses } from '../lib/supabase';
 import { BookOpen, Clock, X, CheckCircle, GraduationCap } from 'lucide-react';
 import './Courses.css';
 
 const Courses = () => {
     const [filter, setFilter] = useState('All');
     const [selectedCourse, setSelectedCourse] = useState(null);
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const categories = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const fetchCourses = async () => {
+        try {
+            setLoading(true);
+            const data = await getCourses();
+            // Transform data to match component structure
+            const transformedCourses = data.map(course => ({
+                id: course.id,
+                title: course.title,
+                desc: course.description || '',
+                category: course.category,
+                lessons: course.lessons || 0,
+                color: course.color || '#6366f1',
+                image: course.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400',
+                outcomes: course.outcomes || [],
+                syllabus: course.syllabus || []
+            }));
+            setCourses(transformedCourses);
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const filteredCourses = filter === 'All'
-        ? coursesData
-        : coursesData.filter(c => c.category === filter);
+        ? courses
+        : courses.filter(c => c.category === filter);
 
     return (
         <section id="courses" className="courses-section">
@@ -36,7 +66,12 @@ const Courses = () => {
                 </div>
 
                 <div className="courses-grid">
-                    {filteredCourses.map((course) => (
+                    {loading ? (
+                        <div className="text-white text-center py-12">Loading courses...</div>
+                    ) : filteredCourses.length === 0 ? (
+                        <div className="text-white text-center py-12">No courses found.</div>
+                    ) : (
+                        filteredCourses.map((course) => (
                         <div
                             key={course.id}
                             className="course-card"
@@ -70,7 +105,8 @@ const Courses = () => {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { electronicsData } from '../data/electronicsData';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getElectronics } from '../lib/supabase';
 import { Search, X, Zap } from 'lucide-react';
 import './ElectronicsLibrary.css';
 
@@ -7,18 +7,45 @@ const ElectronicsLibrary = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
     const [selectedItem, setSelectedItem] = useState(null);
+    const [electronics, setElectronics] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchElectronics();
+    }, []);
+
+    const fetchElectronics = async () => {
+        try {
+            setLoading(true);
+            const data = await getElectronics();
+            // Transform data to match component structure
+            const transformedElectronics = data.map(item => ({
+                id: item.id,
+                name: item.name,
+                category: item.category || '',
+                desc: item.description || '',
+                howItWorks: item.how_it_works || '',
+                image: item.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400'
+            }));
+            setElectronics(transformedElectronics);
+        } catch (error) {
+            console.error('Error fetching electronics:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Dynamic extraction of categories
-    const categories = ['All', ...new Set(electronicsData.map(item => item.category))];
+    const categories = ['All', ...new Set(electronics.map(item => item.category))];
 
     // Filter Logic
     const filteredItems = useMemo(() => {
-        return electronicsData.filter(item => {
+        return electronics.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
             return matchesSearch && matchesCategory;
         });
-    }, [searchTerm, activeCategory]);
+    }, [searchTerm, activeCategory, electronics]);
 
     return (
         <section className="electronics-section">
@@ -52,7 +79,12 @@ const ElectronicsLibrary = () => {
                 </div>
 
                 <div className="elec-grid">
-                    {filteredItems.map(item => (
+                    {loading ? (
+                        <div className="text-white text-center py-12">Loading components...</div>
+                    ) : filteredItems.length === 0 ? (
+                        <div className="text-white text-center py-12">No components found.</div>
+                    ) : (
+                        filteredItems.map(item => (
                         <div
                             key={item.id}
                             className="elec-card"
@@ -65,7 +97,8 @@ const ElectronicsLibrary = () => {
                                 <p className="elec-card-desc">{item.desc}</p>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
                 {/* MODAL */}

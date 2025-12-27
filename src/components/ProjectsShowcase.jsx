@@ -1,17 +1,47 @@
-import React, { useState } from 'react';
-import { projectsData } from '../data/projectsData';
+import React, { useState, useEffect } from 'react';
+import { getProjects } from '../lib/supabase';
 import { Clock, Wrench, X, PlayCircle, CheckCircle2 } from 'lucide-react';
 import './ProjectsShowcase.css';
 
 const ProjectsShowcase = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [activeProject, setActiveProject] = useState(null);
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const categories = ['All', ...new Set(projectsData.map(p => p.category))];
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
+    const fetchProjects = async () => {
+        try {
+            setLoading(true);
+            const data = await getProjects();
+            // Transform data to match component structure
+            const transformedProjects = data.map(project => ({
+                id: project.id,
+                title: project.title,
+                desc: project.description || '',
+                category: project.category || '',
+                difficulty: project.difficulty || 'Beginner',
+                time: project.time || '',
+                image: project.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400',
+                tools: project.tools || [],
+                steps: project.steps || []
+            }));
+            setProjects(transformedProjects);
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const categories = ['All', ...new Set(projects.map(p => p.category))];
 
     const filteredProjects = selectedCategory === 'All'
-        ? projectsData
-        : projectsData.filter(p => p.category === selectedCategory);
+        ? projects
+        : projects.filter(p => p.category === selectedCategory);
 
     return (
         <section className="showcase-section">
@@ -33,7 +63,12 @@ const ProjectsShowcase = () => {
                 </div>
 
                 <div className="projects-grid">
-                    {filteredProjects.map((project) => (
+                    {loading ? (
+                        <div className="text-white text-center py-12">Loading projects...</div>
+                    ) : filteredProjects.length === 0 ? (
+                        <div className="text-white text-center py-12">No projects found.</div>
+                    ) : (
+                        filteredProjects.map((project) => (
                         <div key={project.id} className="showcase-card">
                             <div className="card-image-wrapper">
                                 <img src={project.image} alt={project.title} loading="lazy" />
@@ -59,7 +94,8 @@ const ProjectsShowcase = () => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
 

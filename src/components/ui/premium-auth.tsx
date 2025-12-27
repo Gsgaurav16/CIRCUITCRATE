@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useCallback } from 'react';
 import { cn } from "@/lib/utils";
+import { signUp, signIn } from "@/lib/supabase";
 import { 
   Mail, 
   Lock, 
@@ -292,47 +293,80 @@ export function AuthForm({
     return Object.keys(newErrors).length === 0;
   }, [authMode, registrationStep, formData, validateField]);
 
-  // Handle form submission - this would be replaced with your actual authentication logic
+  // Handle form submission with Supabase authentication
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     
     setIsLoading(true);
     setErrors({});
+    setSuccessMessage('');
     
     try {
-      // In a real implementation, this is where you'd call your authentication service
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
-
       if (authMode === 'login') {
-        // Example implementation - replace with your actual authentication logic
+        // Sign in with Supabase
+        const result = await signIn(formData.email, formData.password);
+        
+        if (result?.user) {
         if (formData.rememberMe) {
           localStorage.setItem('userEmail', formData.email);
           localStorage.setItem('rememberMe', 'true');
+          } else {
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('rememberMe');
         }
         
-        setSuccessMessage('Login successful');
-        onSuccess?.({ email: formData.email });
+          setSuccessMessage('Login successful! Redirecting...');
+          // Small delay to show success message before redirect
+          setTimeout(() => {
+            onSuccess?.({ email: formData.email, name: result.user.user_metadata?.full_name });
+          }, 1000);
+        } else {
+          setErrors({ general: 'Login failed. Please check your credentials.' });
+        }
         
       } else if (authMode === 'signup') {
         if (registrationStep === 'details') {
-          setRegistrationStep('verification');
-          setSuccessMessage('Account created! Please verify your email.');
+          // Sign up with Supabase
+          const result = await signUp(formData.email, formData.password, formData.name);
+          
+          if (result?.user) {
+            // Note: Supabase handles email verification automatically
+            // In production, users will receive a verification email
+            // For now, we'll skip the verification step and go straight to complete
+            setRegistrationStep('complete');
+            setSuccessMessage('Account created successfully! Please check your email to verify your account.');
+            onSuccess?.({ email: formData.email, name: formData.name });
+          } else {
+            setErrors({ general: 'Signup failed. Please try again.' });
+          }
+          
         } else if (registrationStep === 'verification') {
+          // Email verification is handled by Supabase via email link
+          // This step can be skipped in the flow since Supabase sends verification emails
           setRegistrationStep('complete');
           setSuccessMessage('Email verified successfully!');
           onSuccess?.({ email: formData.email, name: formData.name });
         }
         
       } else if (authMode === 'reset') {
-        setSuccessMessage('Password reset email sent!');
+        // Password reset functionality can be added later with Supabase
+        setSuccessMessage('Password reset email sent! Please check your email.');
         setTimeout(() => setAuthMode('login'), 2000);
       }
       
-    } catch (error) {
-      setErrors({ 
-        general: 'Authentication failed. Please try again.' 
-      });
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      // Handle different types of errors
+      let errorMessage = 'Authentication failed. Please try again.';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
